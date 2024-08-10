@@ -1,9 +1,9 @@
 package main
 
 import (
-	"jwt-auth/initializer"
+	"jwt-auth/controllers"
 	"jwt-auth/database"
-	"net/http"
+	"jwt-auth/initializer"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,10 +16,6 @@ func main() {
 	if err != nil {
 		panic("could not connect to db")
 	}
-	r.GET("/register", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "success",
-		})
-	})
+	r.POST("/register", controllers.OnBoardingUser)
 	r.Run()
 }
