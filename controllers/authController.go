@@ -190,7 +190,7 @@ func generateToken(user models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign the token with a secret key
-	secretKey := []byte("your-secret-key") // Replace with your actual secret key
+	secretKey := []byte(jwtSecret)
 	signedToken, err := token.SignedString(secretKey)
 	if err != nil {
 		return "", err
