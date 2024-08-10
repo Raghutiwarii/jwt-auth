@@ -16,7 +16,8 @@ func main() {
 	if err != nil {
 		panic("could not connect to db")
 	}
-	r.GET("/getUsers", controllers.GetAllUsers)
+	r.GET("/users", controllers.GetAllUsers)
 	r.POST("/register", controllers.OnBoardingUser)
+	r.GET("user/:user_id", controllers.GetUser)
 	r.Run()
 }

@@ -4,9 +4,11 @@ import (
 	"jwt-auth/database"
 	"jwt-auth/models"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // OnBoardingUser handles user registration
@@ -75,5 +77,45 @@ func GetAllUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"users": users,
+	})
+}
+
+func GetUser(c *gin.Context) {
+	// Extract the user ID from URL parameters
+	userIDStr := c.Param("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "User ID is required",
+		})
+		return
+	}
+
+	// Convert the user ID to an integer
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid user ID format",
+		})
+		return
+	}
+
+	// Fetch the user from the database
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "User not found",
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to retrieve user",
+			})
+		}
+		return
+	}
+
+	// Return the user details
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
 	})
 }
