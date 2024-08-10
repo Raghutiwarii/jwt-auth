@@ -13,6 +13,6 @@ type User struct {
 	ID        uint64         `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name      string         `json:"name"`
 	Email     string         `gorm:"unique" json:"email"`
-	Password  string         `gorm:"type:varchar(255);not null"`
+	Password  string         `gorm:"type:varchar(255);not null" json:"-"`
 	Address   string         `json:"address"`
 }
