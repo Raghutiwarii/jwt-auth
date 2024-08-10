@@ -4,12 +4,17 @@ import (
 	"jwt-auth/database"
 	"jwt-auth/models"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+var jwtSecret = []byte(os.Getenv("SECRET"))
 
 // OnBoardingUser handles user registration
 func OnBoardingUser(c *gin.Context) {
@@ -118,4 +123,78 @@ func GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"user": user,
 	})
+}
+
+// Login handles user authentication
+func Login(c *gin.Context) {
+	var loginData struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// Bind JSON request body to loginData struct
+	if err := c.BindJSON(&loginData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error_code":  "A002",
+			"description": "Invalid request format",
+		})
+		return
+	}
+
+	// Fetch user by email
+	var user models.User
+	if err := database.DB.Where("email = ?", loginData.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid email",
+		})
+		return
+	}
+
+	// Compare the provided password with the stored hashed password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid password",
+		})
+		return
+	}
+
+	// Generate a JWT token
+	token, err := generateToken(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate token",
+		})
+		return
+	}
+
+	// Return the JWT token
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   token,
+	})
+}
+
+// generateToken generates a JWT token for the given user ID
+func generateToken(user models.User) (string, error) {
+	// Define the expiration time for the token
+	expirationTime := time.Now().Add(60 * time.Second)
+
+	// Create the claims
+	claims := jwt.MapClaims{
+		"Subject":   strconv.Itoa(int(user.ID)),
+		"ExpiresAt": jwt.NewNumericDate(expirationTime),
+		"Email":     user.Email,
+	}
+
+	// Create the token with the claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with a secret key
+	secretKey := []byte("your-secret-key") // Replace with your actual secret key
+	signedToken, err := token.SignedString(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
 }
