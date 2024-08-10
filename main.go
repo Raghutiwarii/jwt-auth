@@ -1,19 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
+	"jwt-auth/initializer"
 	"jwt-auth/database"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	initializer.LoadEnvVariables()
 	r := gin.Default()
-	dbSuccess, err := database.ConnectDB()
-	fmt.Println(dbSuccess)
-	if(err!=nil){
+
+	_, err := database.ConnectDB()
+	if err != nil {
 		panic("could not connect to db")
 	}
 	r.GET("/register", func(c *gin.Context) {
