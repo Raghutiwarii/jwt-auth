@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"jwt-auth/database"
 	"jwt-auth/models"
 	"net/http"
@@ -150,8 +151,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	userInput, err := bcrypt.GenerateFromPassword([]byte(loginData.Password), bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Println("Error hashing password:", err)
+		return
+	}
+
 	// Compare the provided password with the stored hashed password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(userInput, []byte(loginData.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Invalid password",
 		})
