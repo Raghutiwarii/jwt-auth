@@ -184,7 +184,7 @@ func Login(c *gin.Context) {
 // generateToken generates a JWT token for the given user ID
 func generateToken(user models.User) (string, error) {
 	// Define the expiration time for the token
-	expirationTime := time.Now().Add(60 * time.Second)
+	expirationTime := time.Now().Add(5 * time.Minute)
 
 	// Create the claims
 	claims := jwt.MapClaims{
@@ -204,4 +204,27 @@ func generateToken(user models.User) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func GetUserProfile(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Fetch user data from the database
+	var user models.User // Assuming User is your model for user data
+	if err := database.DB.Where("id = ?", userId).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Return user profile data
+	c.JSON(http.StatusOK, gin.H{
+		"id":      user.ID,
+		"name":    user.Name,
+		"email":   user.Email,
+		"address": user.Address,
+	})
 }
